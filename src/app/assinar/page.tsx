@@ -1,8 +1,8 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, Suspense } from 'react'
 import { useSession } from 'next-auth/react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Image from 'next/image'
 import Link from 'next/link'
 import { motion, useReducedMotion } from 'framer-motion'
@@ -16,12 +16,26 @@ type PaymentState =
   | { step: 'approved' }
   | { step: 'error'; message: string }
 
-export default function AssinarPage() {
+function AssinarContent() {
   const { update: updateSession } = useSession()
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const consultationId = searchParams.get('consultationId')
   const prefersReducedMotion = useReducedMotion()
   const [state, setState] = useState<PaymentState>({ step: 'idle' })
   const [copied, setCopied] = useState(false)
+
+  // Load QR from sessionStorage if coming from dashboard consultation start
+  useEffect(() => {
+    if (!consultationId) return
+    const raw = sessionStorage.getItem(`consultation_qr_${consultationId}`)
+    if (!raw) return
+    try {
+      const { paymentId, qrCode, qrCodeBase64, expiresAt } = JSON.parse(raw)
+      setState({ step: 'qr', paymentId, qrCode, qrCodeBase64, expiresAt })
+      sessionStorage.removeItem(`consultation_qr_${consultationId}`)
+    } catch {}
+  }, [consultationId])
 
   const gerarPix = async () => {
     setState({ step: 'loading' })
@@ -54,11 +68,11 @@ export default function AssinarPage() {
     if (data.status === 'approved') {
       setState({ step: 'approved' })
       await updateSession()
-      router.push('/dashboard')
+      router.push(consultationId ? `/consulta/${consultationId}` : '/dashboard')
     } else if (data.status === 'expired' || data.status === 'rejected') {
       setState({ step: 'expired' })
     }
-  }, [updateSession, router])
+  }, [updateSession, router, consultationId])
 
   useEffect(() => {
     if (state.step !== 'qr') return
@@ -222,5 +236,13 @@ export default function AssinarPage() {
         </motion.div>
       </div>
     </main>
+  )
+}
+
+export default function AssinarPage() {
+  return (
+    <Suspense>
+      <AssinarContent />
+    </Suspense>
   )
 }
