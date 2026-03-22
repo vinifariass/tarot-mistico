@@ -4,6 +4,7 @@ import crypto from 'crypto'
 import prisma from '@/lib/prisma'
 import { mpPayment } from '@/lib/mercadopago'
 import { activateSubscription } from '@/lib/subscription'
+import { activateConsultation } from '@/lib/consultation'
 
 function validateSignature(req: Request, dataId: string): boolean {
   const xSignature = req.headers.get('x-signature') ?? ''
@@ -61,7 +62,11 @@ export async function POST(req: Request) {
       where: { id: payment.id },
       data: { status: 'approved' },
     })
-    await activateSubscription(payment.userId)
+    if (payment.consultationId) {
+      await activateConsultation(payment.consultationId)
+    } else {
+      await activateSubscription(payment.userId)
+    }
   }
 
   return NextResponse.json({ ok: true })
