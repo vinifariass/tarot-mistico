@@ -3,9 +3,25 @@
 import { signOut } from "next-auth/react";
 import type { Session } from "next-auth";
 import { motion, useReducedMotion } from "framer-motion";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { Sparkles, Heart, Briefcase, Users, LogOut, RefreshCw, ChevronRight } from "lucide-react";
 import Link from "next/link";
+
+type ConsultationSummary = {
+  id: string
+  type: string
+  status: string
+  msgCount: number
+  maxMsgs: number
+  createdAt: string
+}
+
+const TYPE_LABELS: Record<string, string> = {
+  familia: 'Família',
+  trabalho: 'Trabalho',
+  relacionamento: 'Relacionamento',
+}
 
 const DAILY_CARDS = [
   {
@@ -84,10 +100,48 @@ function OrnamentalDivider({ color }: { color: string }) {
 
 export function DashboardClient({ session }: { session: Session }) {
   const prefersReducedMotion = useReducedMotion();
+  const router = useRouter();
   const [cardRevealed, setCardRevealed] = useState(false);
   const [currentCard] = useState(
     DAILY_CARDS[Math.floor(Math.random() * DAILY_CARDS.length)]
   );
+  const [startingConsultation, setStartingConsultation] = useState<string | null>(null);
+  const [consultations, setConsultations] = useState<ConsultationSummary[]>([]);
+  const [loadingHistory, setLoadingHistory] = useState(true);
+
+  useEffect(() => {
+    fetch('/api/consultations')
+      .then((r) => r.json())
+      .then((data) => {
+        if (Array.isArray(data)) setConsultations(data)
+      })
+      .catch(() => {})
+      .finally(() => setLoadingHistory(false))
+  }, []);
+
+  const handleStartConsultation = async (type: string) => {
+    setStartingConsultation(type)
+    try {
+      const res = await fetch('/api/consultation/start', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error)
+      sessionStorage.setItem(`consultation_qr_${data.consultationId}`, JSON.stringify({
+        paymentId: data.payment_id,
+        qrCode: data.qr_code,
+        qrCodeBase64: data.qr_code_base64,
+        expiresAt: data.expires_at,
+      }))
+      router.push(`/assinar?consultationId=${data.consultationId}`)
+    } catch (e: unknown) {
+      alert(e instanceof Error ? e.message : 'Erro ao iniciar consulta')
+    } finally {
+      setStartingConsultation(null)
+    }
+  };
 
   return (
     <div className="min-h-screen bg-void">
@@ -287,13 +341,51 @@ export function DashboardClient({ session }: { session: Session }) {
               <h2 className="font-display text-base text-parchment tracking-wide mb-4">
                 Suas Consultas
               </h2>
-              <div className="flex-1 flex flex-col items-center justify-center gap-3 py-6">
-                <Sparkles className="w-8 h-8 text-gold/50" />
-                <p className="text-muted text-xs font-body text-center leading-relaxed">
-                  Nenhuma consulta ainda.
-                  <br />
-                  Escolha uma abaixo para começar.
-                </p>
+              <div className="flex-1">
+                {loadingHistory ? (
+                  <p className="text-muted text-sm font-body animate-pulse">Carregando...</p>
+                ) : consultations.length === 0 ? (
+                  <div className="flex flex-col items-center gap-2 py-6">
+                    <Sparkles className="w-8 h-8 text-gold/50" />
+                    <p className="text-muted text-sm font-body text-center">Nenhuma consulta ainda</p>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    {consultations.map((c) => (
+                      <Link
+                        key={c.id}
+                        href={c.status === 'active' ? `/consulta/${c.id}` : '#'}
+                        className={`flex items-center justify-between p-3 rounded-xl border transition-colors ${
+                          c.status === 'active'
+                            ? 'border-mystic/40 bg-mystic/10 hover:bg-mystic/20 cursor-pointer'
+                            : 'border-arcane/30 bg-abyss/50 cursor-default'
+                        }`}
+                      >
+                        <div>
+                          <p className="text-parchment text-xs font-body font-medium">
+                            {TYPE_LABELS[c.type]}
+                          </p>
+                          <p className="text-muted text-[10px] font-body">
+                            {new Date(c.createdAt).toLocaleDateString('pt-BR')}
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <div className="flex gap-0.5">
+                            {Array.from({ length: c.maxMsgs }).map((_, i) => (
+                              <div
+                                key={i}
+                                className={`w-1 h-1 rounded-full ${i < c.msgCount ? 'bg-gold' : 'bg-arcane/40'}`}
+                              />
+                            ))}
+                          </div>
+                          <span className={`text-[10px] font-body ${c.status === 'active' ? 'text-gold' : 'text-muted'}`}>
+                            {c.status === 'active' ? 'ativa' : 'encerrada'}
+                          </span>
+                        </div>
+                      </Link>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
           </motion.div>
@@ -317,8 +409,9 @@ export function DashboardClient({ session }: { session: Session }) {
                   initial={prefersReducedMotion ? {} : { opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={prefersReducedMotion ? {} : { delay: 0.3 + i * 0.08 }}
-                  className={`relative rounded-2xl ${item.bg} ${item.border} border p-5 flex flex-col gap-4 cursor-pointer group transition-all duration-300 hover:shadow-[0_0_30px_rgba(0,0,0,0.3)]`}
+                  className={`relative rounded-2xl ${item.bg} ${item.border} border p-5 flex flex-col gap-4 cursor-pointer group transition-all duration-300 hover:shadow-[0_0_30px_rgba(0,0,0,0.3)] ${startingConsultation === item.id ? 'opacity-60 pointer-events-none' : ''}`}
                   whileHover={prefersReducedMotion ? {} : { y: -4, scale: 1.01 }}
+                  onClick={() => handleStartConsultation(item.id)}
                 >
                   <div className="flex items-start justify-between">
                     <div className={`w-10 h-10 rounded-xl ${item.iconBg} border flex items-center justify-center`}>
