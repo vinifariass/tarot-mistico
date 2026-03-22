@@ -1,0 +1,54 @@
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700;900&family=Lato:wght@300;400;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --void: #0D0A1A;
+  --abyss: #1A0F2E;
+  --arcane: #2D1B5E;
+  --mystic: #7B2FBE;
+  --gold: #D4AF37;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  background-color: var(--void);
+  color: #F0E6FF;
+  font-family: 'Lato', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.font-display {
+  font-family: 'Cinzel', serif;
+}
+
+/* Scrollbar customizada */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: var(--void);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--mystic);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #9B59D0;
+}
+
+/* Seleção de texto */
+::selection {
+  background: rgba(123, 47, 190, 0.4);
+  color: #F0E6FF;
+}
