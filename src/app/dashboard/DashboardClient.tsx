@@ -2,7 +2,7 @@
 
 import { signOut } from "next-auth/react";
 import type { Session } from "next-auth";
-import { motion } from "framer-motion";
+import { motion, useReducedMotion } from "framer-motion";
 import { useState } from "react";
 import { Sparkles, Heart, Briefcase, Users, LogOut, RefreshCw, ChevronRight } from "lucide-react";
 import Link from "next/link";
@@ -83,6 +83,7 @@ function OrnamentalDivider({ color }: { color: string }) {
 }
 
 export function DashboardClient({ session }: { session: Session }) {
+  const prefersReducedMotion = useReducedMotion();
   const [cardRevealed, setCardRevealed] = useState(false);
   const [currentCard] = useState(
     DAILY_CARDS[Math.floor(Math.random() * DAILY_CARDS.length)]
@@ -120,7 +121,7 @@ export function DashboardClient({ session }: { session: Session }) {
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 pt-24 pb-16 space-y-8">
 
         {/* Boas-vindas */}
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
+        <motion.div initial={prefersReducedMotion ? {} : { opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
           <h1 className="font-display text-3xl sm:text-4xl text-parchment mb-1">
             Seu Portal Místico
           </h1>
@@ -135,9 +136,9 @@ export function DashboardClient({ session }: { session: Session }) {
 
           {/* Carta do dia — col 3 */}
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
+            initial={prefersReducedMotion ? {} : { opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 }}
+            transition={prefersReducedMotion ? {} : { delay: 0.1 }}
             className="lg:col-span-3"
           >
             <div className="bg-abyss border border-mystic/20 rounded-2xl p-6 h-full">
@@ -167,29 +168,32 @@ export function DashboardClient({ session }: { session: Session }) {
                       boxShadow: "0 0 30px rgba(123,47,190,0.3), inset 0 1px 0 rgba(255,255,255,0.06)",
                     }}
                     onClick={() => setCardRevealed(true)}
-                    animate={{
+                    onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setCardRevealed(true); } }}
+                    role="button"
+                    tabIndex={0}
+                    aria-label="Revelar carta do dia"
+                    animate={prefersReducedMotion ? {} : {
                       boxShadow: [
                         "0 0 20px rgba(123,47,190,0.2)",
                         "0 0 60px rgba(212,175,55,0.35)",
                         "0 0 20px rgba(123,47,190,0.2)",
                       ],
                     }}
-                    transition={{ duration: 2.5, repeat: Infinity }}
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.97 }}
+                    transition={prefersReducedMotion ? {} : { duration: 2.5, repeat: Infinity }}
+                    whileHover={prefersReducedMotion ? {} : { scale: 1.05 }}
+                    whileTap={prefersReducedMotion ? {} : { scale: 0.97 }}
                   >
                     {/* Verso decorativo */}
                     <div className="absolute inset-[8px] rounded-[7px] border border-gold/15" />
                     <div className="absolute inset-[14px] rounded-[5px] border border-mystic/20" />
                     <div className="absolute inset-0 flex items-center justify-center">
-                      <motion.span
-                        className="text-4xl"
+                      <motion.div
                         style={{ color: "#D4AF37", filter: "drop-shadow(0 0 12px rgba(212,175,55,0.8))" }}
-                        animate={{ opacity: [0.5, 1, 0.5] }}
-                        transition={{ duration: 2, repeat: Infinity }}
+                        animate={prefersReducedMotion ? {} : { opacity: [0.5, 1, 0.5] }}
+                        transition={prefersReducedMotion ? {} : { duration: 2, repeat: Infinity }}
                       >
-                        ✦
-                      </motion.span>
+                        <Sparkles className="w-8 h-8" style={{ color: "#D4AF37" }} />
+                      </motion.div>
                     </div>
                   </motion.div>
                   <div className="text-center">
@@ -202,9 +206,9 @@ export function DashboardClient({ session }: { session: Session }) {
               ) : (
                 <motion.div
                   className="flex flex-col sm:flex-row gap-5 items-center sm:items-start"
-                  initial={{ opacity: 0, scale: 0.92 }}
+                  initial={prefersReducedMotion ? {} : { opacity: 0, scale: 0.92 }}
                   animate={{ opacity: 1, scale: 1 }}
-                  transition={{ type: "spring", stiffness: 200 }}
+                  transition={prefersReducedMotion ? {} : { type: "spring", stiffness: 200 }}
                 >
                   {/* Carta revelada */}
                   <div
@@ -274,9 +278,9 @@ export function DashboardClient({ session }: { session: Session }) {
 
           {/* Histórico rápido — col 2 */}
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
+            initial={prefersReducedMotion ? {} : { opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
+            transition={prefersReducedMotion ? {} : { delay: 0.2 }}
             className="lg:col-span-2"
           >
             <div className="bg-abyss border border-white/5 rounded-2xl p-5 h-full flex flex-col">
@@ -284,7 +288,7 @@ export function DashboardClient({ session }: { session: Session }) {
                 Suas Consultas
               </h2>
               <div className="flex-1 flex flex-col items-center justify-center gap-3 py-6">
-                <span className="text-4xl opacity-30">✦</span>
+                <Sparkles className="w-8 h-8 text-gold/50" />
                 <p className="text-muted text-xs font-body text-center leading-relaxed">
                   Nenhuma consulta ainda.
                   <br />
@@ -297,9 +301,9 @@ export function DashboardClient({ session }: { session: Session }) {
 
         {/* Consultas disponíveis */}
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={prefersReducedMotion ? {} : { opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.25 }}
+          transition={prefersReducedMotion ? {} : { delay: 0.25 }}
         >
           <h2 className="font-display text-xl text-parchment tracking-wide mb-5">
             Iniciar uma Consulta
@@ -310,11 +314,11 @@ export function DashboardClient({ session }: { session: Session }) {
               return (
                 <motion.div
                   key={item.id}
-                  initial={{ opacity: 0, y: 20 }}
+                  initial={prefersReducedMotion ? {} : { opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.3 + i * 0.08 }}
+                  transition={prefersReducedMotion ? {} : { delay: 0.3 + i * 0.08 }}
                   className={`relative rounded-2xl ${item.bg} ${item.border} border p-5 flex flex-col gap-4 cursor-pointer group transition-all duration-300 hover:shadow-[0_0_30px_rgba(0,0,0,0.3)]`}
-                  whileHover={{ y: -4, scale: 1.01 }}
+                  whileHover={prefersReducedMotion ? {} : { y: -4, scale: 1.01 }}
                 >
                   <div className="flex items-start justify-between">
                     <div className={`w-10 h-10 rounded-xl ${item.iconBg} border flex items-center justify-center`}>

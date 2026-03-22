@@ -4,6 +4,9 @@ import { useState, useEffect, useCallback } from 'react'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
+import Link from 'next/link'
+import { motion, useReducedMotion } from 'framer-motion'
+import { Sparkles } from 'lucide-react'
 
 type PaymentState =
   | { step: 'idle' }
@@ -16,6 +19,7 @@ type PaymentState =
 export default function AssinarPage() {
   const { update: updateSession } = useSession()
   const router = useRouter()
+  const prefersReducedMotion = useReducedMotion()
   const [state, setState] = useState<PaymentState>({ step: 'idle' })
   const [copied, setCopied] = useState(false)
 
@@ -76,68 +80,146 @@ export default function AssinarPage() {
     return () => clearInterval(interval)
   }, [state])
 
+  // Simple star particles for background
+  const stars = Array.from({ length: prefersReducedMotion ? 0 : 30 }, (_, i) => ({
+    id: i,
+    x: `${(i * 17.3) % 100}%`,
+    y: `${(i * 23.7) % 100}%`,
+    size: (i % 3) + 1,
+    delay: (i * 0.15) % 3,
+  }))
+
   return (
-    <main className="min-h-screen flex items-center justify-center"
-      style={{ background: 'linear-gradient(135deg, #0D0A1A 0%, #1A0F2E 100%)' }}>
-      <div className="bg-[#1A0F2E] border border-[#2D1B5E] rounded-2xl p-8 max-w-md w-full text-center shadow-2xl">
-        <h1 className="text-3xl font-bold text-[#D4AF37] mb-2" style={{ fontFamily: 'Cinzel, serif' }}>
-          TarotMístico
-        </h1>
-        <p className="text-[#F0E6FF] mb-6">Acesso completo por <strong>R$5/mês</strong></p>
+    <main className="min-h-screen bg-void flex flex-col">
+      {/* Atmospheric header */}
+      <nav className="fixed top-0 left-0 right-0 z-50 bg-void/80 backdrop-blur-md border-b border-mystic/20">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+          <Link href="/" className="flex items-center gap-2 group">
+            <Sparkles className="w-6 h-6 text-gold group-hover:text-gold-light transition-colors" />
+            <span className="font-display text-xl text-parchment tracking-widest">
+              Tarot<span className="text-gold">Místico</span>
+            </span>
+          </Link>
+          <Link href="/login" className="text-sm text-muted hover:text-parchment transition-colors font-body">
+            Já tenho conta
+          </Link>
+        </div>
+      </nav>
 
-        {state.step === 'idle' && (
-          <button
-            onClick={gerarPix}
-            className="w-full py-3 rounded-xl font-bold text-black"
-            style={{ background: 'linear-gradient(135deg, #D4AF37, #7B2FBE)' }}>
-            Gerar PIX R$5
-          </button>
-        )}
+      {/* Background particles */}
+      <div className="fixed inset-0 overflow-hidden pointer-events-none" aria-hidden="true">
+        <div className="absolute inset-0 bg-gradient-to-b from-arcane/30 via-void to-void" />
+        <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] rounded-full bg-mystic/10 blur-[120px]" />
+        {stars.map((s) => (
+          <motion.div
+            key={s.id}
+            className="absolute rounded-full"
+            style={{
+              left: s.x,
+              top: s.y,
+              width: s.size,
+              height: s.size,
+              background: s.size > 2 ? '#D4AF37' : '#F0E6FF',
+            }}
+            animate={{ opacity: [0.1, 0.8, 0.1], scale: [0.6, 1.3, 0.6] }}
+            transition={{
+              duration: 2.5,
+              delay: s.delay,
+              repeat: Infinity,
+              ease: 'easeInOut',
+            }}
+          />
+        ))}
+      </div>
 
-        {state.step === 'loading' && (
-          <p className="text-[#F0E6FF] animate-pulse">Gerando QR Code...</p>
-        )}
+      {/* Main content */}
+      <div className="flex-1 flex items-center justify-center px-4 pt-24 pb-16">
+        <motion.div
+          className="bg-abyss border border-arcane/60 rounded-2xl p-8 max-w-md w-full text-center shadow-2xl relative z-10"
+          initial={prefersReducedMotion ? {} : { opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={prefersReducedMotion ? {} : { duration: 0.6, ease: 'easeOut' }}
+        >
+          {/* Logo / title */}
+          <div className="flex items-center justify-center gap-2 mb-2">
+            <Sparkles className="w-5 h-5 text-gold" />
+            <h1 className="font-display text-3xl text-gold tracking-widest">
+              TarotMístico
+            </h1>
+          </div>
+          <p className="text-parchment font-body mb-1">
+            Assinatura mensal — <strong className="text-gold">R$5/mês</strong>
+          </p>
+          <p className="text-muted text-xs font-body mb-6">
+            Acesso completo ao portal + carta diária gratuita
+          </p>
 
-        {state.step === 'qr' && (
-          <div className="flex flex-col items-center gap-4">
-            <Image
-              src={`data:image/png;base64,${state.qrCodeBase64}`}
-              alt="QR Code PIX"
-              width={200} height={200}
-              className="rounded-lg border-2 border-[#7B2FBE]"
-            />
-            <p className="text-sm text-[#F0E6FF]/70">Expira em: <strong className="text-[#D4AF37]">{countdown}</strong></p>
+          <div className="w-full h-px bg-arcane/40 mb-6" />
+
+          {state.step === 'idle' && (
             <button
-              onClick={copiar}
-              className="w-full py-2 rounded-lg border border-[#7B2FBE] text-[#F0E6FF] text-sm">
-              {copied ? '✓ Copiado!' : 'Copiar código PIX'}
+              onClick={gerarPix}
+              className="w-full py-3 rounded-xl font-body font-semibold text-void bg-gradient-to-r from-gold to-amethyst hover:opacity-90 transition-opacity cursor-pointer"
+            >
+              Assinar por R$5 via PIX
             </button>
-            <p className="text-xs text-[#F0E6FF]/50">Aguardando confirmação do pagamento...</p>
-          </div>
-        )}
+          )}
 
-        {state.step === 'expired' && (
-          <div className="flex flex-col gap-4">
-            <p className="text-red-400">QR Code expirado ou pagamento cancelado.</p>
-            <button onClick={gerarPix}
-              className="w-full py-3 rounded-xl font-bold text-black"
-              style={{ background: 'linear-gradient(135deg, #D4AF37, #7B2FBE)' }}>
-              Gerar novo PIX
-            </button>
-          </div>
-        )}
+          {state.step === 'loading' && (
+            <p className="text-parchment font-body animate-pulse">Gerando QR Code...</p>
+          )}
 
-        {state.step === 'approved' && (
-          <p className="text-green-400 font-bold">Pagamento confirmado! Redirecionando...</p>
-        )}
+          {state.step === 'qr' && (
+            <div className="flex flex-col items-center gap-4">
+              <Image
+                src={`data:image/png;base64,${state.qrCodeBase64}`}
+                alt="QR Code PIX"
+                width={200} height={200}
+                className="rounded-lg border-2 border-mystic/60"
+              />
+              <p className="text-sm text-parchment/70 font-body">
+                Expira em: <strong className="text-gold">{countdown}</strong>
+              </p>
+              <button
+                onClick={copiar}
+                className="w-full py-2 rounded-lg border border-arcane text-parchment text-sm font-body hover:border-mystic transition-colors cursor-pointer"
+              >
+                {copied ? '✓ Copiado!' : 'Copiar código PIX'}
+              </button>
+              <p className="text-xs text-muted font-body">Aguardando confirmação do pagamento...</p>
+            </div>
+          )}
 
-        {state.step === 'error' && (
-          <div className="flex flex-col gap-4">
-            <p className="text-red-400">{state.message}</p>
-            <button onClick={() => setState({ step: 'idle' })}
-              className="text-[#D4AF37] underline text-sm">Tentar novamente</button>
-          </div>
-        )}
+          {state.step === 'expired' && (
+            <div className="flex flex-col gap-4">
+              <p className="text-red-400 font-body text-sm">QR Code expirado ou pagamento cancelado.</p>
+              <button
+                onClick={gerarPix}
+                className="w-full py-3 rounded-xl font-body font-semibold text-void bg-gradient-to-r from-gold to-amethyst hover:opacity-90 transition-opacity cursor-pointer"
+              >
+                Gerar novo PIX
+              </button>
+            </div>
+          )}
+
+          {state.step === 'approved' && (
+            <p className="text-emerald-400 font-body font-semibold">
+              Pagamento confirmado! Redirecionando...
+            </p>
+          )}
+
+          {state.step === 'error' && (
+            <div className="flex flex-col gap-4">
+              <p className="text-red-400 font-body text-sm">{state.message}</p>
+              <button
+                onClick={() => setState({ step: 'idle' })}
+                className="text-gold underline text-sm font-body cursor-pointer"
+              >
+                Tentar novamente
+              </button>
+            </div>
+          )}
+        </motion.div>
       </div>
     </main>
   )

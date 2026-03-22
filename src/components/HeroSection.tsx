@@ -1,6 +1,6 @@
 "use client";
 
-import { motion } from "framer-motion";
+import { motion, useReducedMotion } from "framer-motion";
 import { useEffect, useState, useMemo } from "react";
 import Link from "next/link";
 import { Star, Moon, Sparkles } from "lucide-react";
@@ -118,10 +118,12 @@ function RealisticTarotCard({
   card,
   isActive,
   offset,
+  reducedMotion,
 }: {
   card: typeof TAROT_CARDS[0];
   isActive: boolean;
   offset: number;
+  reducedMotion: boolean;
 }) {
   return (
     <div
@@ -158,7 +160,7 @@ function RealisticTarotCard({
       <CardPattern color={card.ornamentColor} />
 
       {/* Shimmer animado na carta ativa */}
-      {isActive && (
+      {isActive && !reducedMotion && (
         <motion.div
           className="absolute inset-0 rounded-[13px] pointer-events-none overflow-hidden"
           initial={false}
@@ -279,9 +281,9 @@ function RealisticTarotCard({
 
 // Partícula de estrela
 function StarParticle({
-  delay, x, y, size,
+  delay, x, y, size, reducedMotion,
 }: {
-  delay: number; x: string; y: string; size: number;
+  delay: number; x: string; y: string; size: number; reducedMotion: boolean;
 }) {
   return (
     <motion.div
@@ -292,9 +294,10 @@ function StarParticle({
         width: size,
         height: size,
         background: size > 2 ? "#D4AF37" : "#F0E6FF",
+        opacity: reducedMotion ? 0.4 : undefined,
       }}
-      animate={{ opacity: [0.1, 1, 0.1], scale: [0.6, 1.4, 0.6] }}
-      transition={{
+      animate={reducedMotion ? {} : { opacity: [0.1, 1, 0.1], scale: [0.6, 1.4, 0.6] }}
+      transition={reducedMotion ? {} : {
         duration: 2.5 + Math.random() * 2,
         delay,
         repeat: Infinity,
@@ -305,25 +308,29 @@ function StarParticle({
 }
 
 export function HeroSection() {
+  const prefersReducedMotion = useReducedMotion();
   const [activeCard, setActiveCard] = useState(2);
 
   useEffect(() => {
+    if (prefersReducedMotion) return;
     const interval = setInterval(() => {
       setActiveCard((prev) => (prev + 1) % TAROT_CARDS.length);
     }, 3500);
     return () => clearInterval(interval);
-  }, []);
+  }, [prefersReducedMotion]);
+
+  const particleCount = prefersReducedMotion ? 0 : 60;
 
   const stars = useMemo(
     () =>
-      Array.from({ length: 60 }, (_, i) => ({
+      Array.from({ length: particleCount }, (_, i) => ({
         id: i,
         x: `${(i * 17.3) % 100}%`,
         y: `${(i * 23.7) % 100}%`,
         size: (i % 3) + 1,
         delay: (i * 0.11) % 3,
       })),
-    []
+    [particleCount]
   );
 
   const activeCardData = TAROT_CARDS[activeCard];
@@ -336,8 +343,8 @@ export function HeroSection() {
         {/* Glow central que muda de cor com a carta ativa */}
         <motion.div
           className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[700px] rounded-full blur-[160px]"
-          animate={{ backgroundColor: activeCardData.glow.replace("0.8","0.08").replace("0.7","0.07").replace("0.85","0.09") }}
-          transition={{ duration: 1.2 }}
+          animate={prefersReducedMotion ? {} : { backgroundColor: activeCardData.glow.replace("0.8","0.08").replace("0.7","0.07").replace("0.85","0.09") }}
+          transition={prefersReducedMotion ? {} : { duration: 1.2 }}
         />
         <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[400px] h-[400px] rounded-full bg-mystic/12 blur-[100px]" />
         <div className="absolute bottom-0 left-0 right-0 h-64 bg-gradient-to-t from-void to-transparent" />
@@ -347,21 +354,22 @@ export function HeroSection() {
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <motion.div
           className="absolute top-1/4 right-1/4 w-96 h-96 rounded-full blur-[120px] opacity-20"
-          animate={{
+          style={prefersReducedMotion ? { background: "radial-gradient(circle, rgba(123,47,190,0.4), transparent)" } : undefined}
+          animate={prefersReducedMotion ? {} : {
             background: [
               "radial-gradient(circle, rgba(123,47,190,0.4), transparent)",
               "radial-gradient(circle, rgba(212,175,55,0.3), transparent)",
               "radial-gradient(circle, rgba(123,47,190,0.4), transparent)",
             ],
           }}
-          transition={{ duration: 8, repeat: Infinity }}
+          transition={prefersReducedMotion ? {} : { duration: 8, repeat: Infinity }}
         />
       </div>
 
       {/* Estrelas */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         {stars.map((s) => (
-          <StarParticle key={s.id} delay={s.delay} x={s.x} y={s.y} size={s.size} />
+          <StarParticle key={s.id} delay={s.delay} x={s.x} y={s.y} size={s.size} reducedMotion={!!prefersReducedMotion} />
         ))}
       </div>
 
@@ -392,14 +400,14 @@ export function HeroSection() {
             <br />
             <motion.span
               className="text-transparent bg-clip-text bg-gradient-to-r from-gold via-gold-light to-amethyst inline-block"
-              animate={{
+              animate={prefersReducedMotion ? {} : {
                 backgroundImage: [
                   "linear-gradient(90deg, #D4AF37, #F0C850, #9B59D0)",
                   "linear-gradient(90deg, #9B59D0, #D4AF37, #F0C850)",
                   "linear-gradient(90deg, #D4AF37, #F0C850, #9B59D0)",
                 ],
               }}
-              transition={{ duration: 6, repeat: Infinity }}
+              transition={prefersReducedMotion ? {} : { duration: 6, repeat: Infinity }}
             >
               Revelam
             </motion.span>
@@ -421,11 +429,13 @@ export function HeroSection() {
               className="relative overflow-hidden px-8 py-4 bg-gradient-to-r from-mystic to-amethyst text-parchment font-body font-semibold rounded-xl text-base transition-all duration-300 hover:scale-105 hover:shadow-[0_0_50px_rgba(123,47,190,0.7),0_0_100px_rgba(123,47,190,0.3)] text-center cursor-pointer group"
             >
               <span className="relative z-10">Consultar as Cartas</span>
-              <motion.div
-                className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent"
-                animate={{ x: ["-100%", "100%"] }}
-                transition={{ duration: 2, repeat: Infinity, repeatDelay: 2 }}
-              />
+              {!prefersReducedMotion && (
+                <motion.div
+                  className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent"
+                  animate={{ x: ["-100%", "100%"] }}
+                  transition={{ duration: 2, repeat: Infinity, repeatDelay: 2 }}
+                />
+              )}
             </Link>
             <Link
               href="#como-funciona"
@@ -472,9 +482,8 @@ export function HeroSection() {
           transition={{ duration: 1, ease: "easeOut", delay: 0.2 }}
         >
           <div
-            className="relative"
+            className="relative w-[380px] max-w-full"
             style={{
-              width: 380,
               height: 310,
               perspective: "1200px",
             }}
@@ -483,10 +492,10 @@ export function HeroSection() {
             <motion.div
               className="absolute bottom-0 left-1/2 -translate-x-1/2 rounded-full blur-2xl"
               style={{ width: 200, height: 30 }}
-              animate={{
+              animate={prefersReducedMotion ? {} : {
                 backgroundColor: activeCardData.glow.replace("0.8","0.35").replace("0.7","0.3").replace("0.85","0.4"),
               }}
-              transition={{ duration: 1 }}
+              transition={prefersReducedMotion ? {} : { duration: 1 }}
             />
 
             {/* Anéis orbitando */}
@@ -500,8 +509,8 @@ export function HeroSection() {
                 borderRadius: "50%",
                 border: "1px solid rgba(212,175,55,0.15)",
               }}
-              animate={{ rotate: 360 }}
-              transition={{ duration: 25, repeat: Infinity, ease: "linear" }}
+              animate={prefersReducedMotion ? {} : { rotate: 360 }}
+              transition={prefersReducedMotion ? {} : { duration: 25, repeat: Infinity, ease: "linear" }}
             />
             <motion.div
               className="absolute top-1/2 left-1/2 pointer-events-none"
@@ -513,8 +522,8 @@ export function HeroSection() {
                 borderRadius: "50%",
                 border: "1px solid rgba(123,47,190,0.2)",
               }}
-              animate={{ rotate: -360 }}
-              transition={{ duration: 18, repeat: Infinity, ease: "linear" }}
+              animate={prefersReducedMotion ? {} : { rotate: -360 }}
+              transition={prefersReducedMotion ? {} : { duration: 18, repeat: Infinity, ease: "linear" }}
             />
 
             {/* Cartas */}
@@ -533,7 +542,13 @@ export function HeroSection() {
                     left: "50%",
                     transformStyle: "preserve-3d",
                   }}
-                  animate={{
+                  animate={prefersReducedMotion ? {
+                    x: offset * 55 - 70,
+                    zIndex: isActive ? 10 : total - Math.abs(offset),
+                    filter: isActive
+                      ? "brightness(1) saturate(1.1)"
+                      : `brightness(${0.45 - Math.abs(offset) * 0.05}) saturate(0.7)`,
+                  } : {
                     rotateY: offset * -12,
                     rotateZ: offset * 8,
                     x: offset * 55 - 70,
@@ -544,9 +559,13 @@ export function HeroSection() {
                       ? "brightness(1) saturate(1.1)"
                       : `brightness(${0.45 - Math.abs(offset) * 0.05}) saturate(0.7)`,
                   }}
-                  transition={{ type: "spring", stiffness: 180, damping: 22 }}
+                  transition={prefersReducedMotion ? {} : { type: "spring", stiffness: 180, damping: 22 }}
                   onClick={() => setActiveCard(i)}
-                  whileHover={{
+                  onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setActiveCard(i); } }}
+                  role="button"
+                  tabIndex={0}
+                  aria-label={`Selecionar carta ${card.name}`}
+                  whileHover={prefersReducedMotion ? {} : {
                     scale: isActive ? 1.15 : 0.88,
                     filter: "brightness(0.9) saturate(1)",
                     transition: { duration: 0.2 },
@@ -557,6 +576,7 @@ export function HeroSection() {
                       card={card}
                       isActive={isActive}
                       offset={offset}
+                      reducedMotion={!!prefersReducedMotion}
                     />
                   </div>
                 </motion.div>
@@ -588,8 +608,8 @@ export function HeroSection() {
       {/* Scroll indicator */}
       <motion.div
         className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2"
-        animate={{ y: [0, 8, 0] }}
-        transition={{ duration: 2, repeat: Infinity }}
+        animate={prefersReducedMotion ? {} : { y: [0, 8, 0] }}
+        transition={prefersReducedMotion ? {} : { duration: 2, repeat: Infinity }}
       >
         <Moon className="w-4 h-4 text-muted/40" />
         <div className="w-[1px] h-8 bg-gradient-to-b from-muted/40 to-transparent" />
