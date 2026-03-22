@@ -29,7 +29,7 @@ describe('activateSubscription', () => {
     // Verifica campos do update
     expect(call.update.status).toBe('active')
     expect(call.update.paidAt).toBeInstanceOf(Date)
-    const expiresAt: Date = call.update.expiresAt
+    const expiresAt = call.update.expiresAt as Date
     const diffDays = (expiresAt.getTime() - before.getTime()) / (1000 * 60 * 60 * 24)
     expect(diffDays).toBeGreaterThanOrEqual(29.9)
     expect(diffDays).toBeLessThanOrEqual(30.1)

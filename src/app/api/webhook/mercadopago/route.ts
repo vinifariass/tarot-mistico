@@ -1,10 +1,11 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextResponse } from 'next/server'
+import type { NextRequest } from 'next/server'
 import crypto from 'crypto'
 import prisma from '@/lib/prisma'
 import { mpPayment } from '@/lib/mercadopago'
 import { activateSubscription } from '@/lib/subscription'
 
-function validateSignature(req: NextRequest, dataId: string): boolean {
+function validateSignature(req: Request, dataId: string): boolean {
   const xSignature = req.headers.get('x-signature') ?? ''
   const xRequestId = req.headers.get('x-request-id') ?? ''
   const secret = process.env.MERCADOPAGO_WEBHOOK_SECRET!
@@ -30,7 +31,7 @@ function validateSignature(req: NextRequest, dataId: string): boolean {
   return crypto.timingSafeEqual(vBuf, eBuf)
 }
 
-export async function POST(req: NextRequest) {
+export async function POST(req: Request) {
   const url = new URL(req.url)
   const dataId = url.searchParams.get('data.id') ?? ''
 
