@@ -1,32 +1,41 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Shuffle, BookOpen, MessageCircle } from "lucide-react";
+import { UserPlus, LayoutGrid, QrCode, MessageCircle } from "lucide-react";
 
 const STEPS = [
   {
-    icon: Shuffle,
+    icon: UserPlus,
     number: "01",
-    title: "Escolha sua Tiragem",
-    description: "Selecione entre tiragem de 1 carta do dia, Celtic Cross completo ou tiragem de 3 cartas para passado, presente e futuro.",
+    title: "Crie sua Conta",
+    description: "Cadastro gratuito em menos de 1 minuto. Apenas nome, email e senha.",
     color: "text-amethyst",
     border: "border-amethyst/30",
     bg: "bg-amethyst/10",
   },
   {
-    icon: BookOpen,
+    icon: LayoutGrid,
     number: "02",
-    title: "Receba Sua Leitura",
-    description: "As cartas são reveladas uma a uma com interpretações detalhadas e personalizadas baseadas na sua pergunta ou situação.",
+    title: "Escolha o Tema",
+    description: "Família, trabalho ou relacionamento. Cada consulta é focada na área da sua vida que mais precisa de clareza.",
     color: "text-gold",
     border: "border-gold/30",
     bg: "bg-gold/10",
   },
   {
-    icon: MessageCircle,
+    icon: QrCode,
     number: "03",
-    title: "Salve & Reflita",
-    description: "Guarde suas leituras no diário místico, compare com leituras anteriores e acompanhe os padrões que o universo revela.",
+    title: "Pague via PIX",
+    description: "Escaneie o QR Code e pague de R$3 a R$5. Acesso liberado em minutos após a confirmação.",
+    color: "text-mystic",
+    border: "border-mystic/30",
+    bg: "bg-mystic/10",
+  },
+  {
+    icon: MessageCircle,
+    number: "04",
+    title: "Converse com Seraphina",
+    description: "Madame Seraphina revela suas cartas e responde até 5 perguntas sobre seu tema escolhido.",
     color: "text-parchment",
     border: "border-parchment/20",
     bg: "bg-parchment/5",
@@ -50,23 +59,22 @@ export function HowItWorksSection() {
             Como Funciona
           </h2>
           <p className="text-muted font-body text-base max-w-lg mx-auto">
-            Três passos simples para acessar a sabedoria ancestral das cartas
+            Quatro passos simples para acessar a sabedoria das cartas
           </p>
         </motion.div>
 
-        <div className="grid md:grid-cols-3 gap-8">
+        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-8">
           {STEPS.map((step, i) => (
             <motion.div
               key={step.number}
               initial={{ opacity: 0, y: 40 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
-              transition={{ delay: i * 0.15 }}
+              transition={{ delay: i * 0.12 }}
               className="relative"
             >
-              {/* Connector line */}
               {i < STEPS.length - 1 && (
-                <div className="hidden md:block absolute top-10 left-full w-full h-px bg-gradient-to-r from-mystic/40 to-transparent z-0" />
+                <div className="hidden lg:block absolute top-10 left-full w-full h-px bg-gradient-to-r from-mystic/40 to-transparent z-0" />
               )}
 
               <div className={`relative z-10 p-6 rounded-2xl bg-void border ${step.border} flex flex-col gap-4`}>

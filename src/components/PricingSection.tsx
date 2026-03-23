@@ -21,7 +21,6 @@ const CONSULTATIONS = [
       "Foco em dinâmica familiar",
       "Interpretação de conflitos",
       "Orientação sobre relacionamentos",
-      "PDF da leitura salvo",
     ],
     description: "Entenda os vínculos, conflitos e a energia que move sua família.",
   },
@@ -41,7 +40,6 @@ const CONSULTATIONS = [
       "Carreira e propósito",
       "Desafios e oportunidades",
       "Timing de decisões",
-      "PDF da leitura salvo",
     ],
     description: "Descubra o que o universo revela sobre sua carreira e próximos passos.",
   },
@@ -62,7 +60,6 @@ const CONSULTATIONS = [
       "Compatibilidade energética",
       "Obstáculos e potenciais",
       "Orientação espiritual profunda",
-      "PDF da leitura salvo",
     ],
     description: "A tiragem mais completa para amor, paixão e conexões da alma.",
   },
@@ -251,7 +248,7 @@ export function PricingSection() {
           {[
             { q: "Como funciona o pagamento?", a: "Após escolher sua consulta, você recebe a chave PIX. Em até 5 minutos seu acesso é liberado." },
             { q: "Posso fazer mais de uma consulta?", a: "Sim! Cada consulta é paga individualmente. Quanto mais você consulta, mais o universo revela." },
-            { q: "As leituras ficam salvas?", a: "Sim, todas as suas consultas ficam salvas no seu perfil em PDF para reler quando quiser." },
+            { q: "As leituras ficam salvas?", a: "Sim, todas as suas consultas e o histórico de mensagens ficam salvos no seu perfil." },
             { q: "É seguro e confidencial?", a: "Totalmente. Suas consultas são privadas e seus dados protegidos com criptografia." },
           ].map(({ q, a }) => (
             <div key={q} className="p-4 rounded-xl bg-abyss border border-white/5">
