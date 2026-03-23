@@ -15,6 +15,13 @@ type PaymentState =
   | { step: 'expired' }
   | { step: 'approved' }
   | { step: 'error'; message: string }
+  | { step: 'qr_missing' }
+
+const TYPE_LABELS: Record<string, string> = {
+  familia: 'Família',
+  trabalho: 'Trabalho',
+  relacionamento: 'Relacionamento',
+}
 
 function AssinarContent() {
   const { update: updateSession } = useSession()
@@ -24,36 +31,34 @@ function AssinarContent() {
   const prefersReducedMotion = useReducedMotion()
   const [state, setState] = useState<PaymentState>({ step: 'idle' })
   const [copied, setCopied] = useState(false)
+  const [consultationType, setConsultationType] = useState<string | null>(null)
+  const [consultationAmount, setConsultationAmount] = useState<number | null>(null)
+
+  // Redirect to dashboard if accessed directly without consultationId
+  useEffect(() => {
+    if (!consultationId) {
+      router.replace('/dashboard')
+    }
+  }, [consultationId, router])
 
   // Load QR from sessionStorage if coming from dashboard consultation start
   useEffect(() => {
     if (!consultationId) return
     const raw = sessionStorage.getItem(`consultation_qr_${consultationId}`)
-    if (!raw) return
-    try {
-      const { paymentId, qrCode, qrCodeBase64, expiresAt } = JSON.parse(raw)
-      setState({ step: 'qr', paymentId, qrCode, qrCodeBase64, expiresAt })
-      sessionStorage.removeItem(`consultation_qr_${consultationId}`)
-    } catch {}
-  }, [consultationId])
-
-  const gerarPix = async () => {
-    setState({ step: 'loading' })
-    try {
-      const res = await fetch('/api/payment/create', { method: 'POST' })
-      const data = await res.json()
-      if (!res.ok) throw new Error(data.error ?? 'Erro ao gerar PIX')
-      setState({
-        step: 'qr',
-        paymentId: data.payment_id,
-        qrCode: data.qr_code,
-        qrCodeBase64: data.qr_code_base64,
-        expiresAt: data.expires_at,
-      })
-    } catch (e: unknown) {
-      setState({ step: 'error', message: e instanceof Error ? e.message : 'Erro desconhecido' })
+    if (!raw) {
+      setState({ step: 'qr_missing' })
+      return
     }
-  }
+    try {
+      const { paymentId, qrCode, qrCodeBase64, expiresAt, type, amount } = JSON.parse(raw)
+      setState({ step: 'qr', paymentId, qrCode, qrCodeBase64, expiresAt })
+      setConsultationType(type ?? null)
+      setConsultationAmount(amount ?? null)
+      sessionStorage.removeItem(`consultation_qr_${consultationId}`)
+    } catch {
+      setState({ step: 'qr_missing' })
+    }
+  }, [consultationId])
 
   const copiar = async () => {
     if (state.step !== 'qr') return
@@ -94,7 +99,6 @@ function AssinarContent() {
     return () => clearInterval(interval)
   }, [state])
 
-  // Simple star particles for background
   const stars = Array.from({ length: prefersReducedMotion ? 0 : 30 }, (_, i) => ({
     id: i,
     x: `${(i * 17.3) % 100}%`,
@@ -103,9 +107,13 @@ function AssinarContent() {
     delay: (i * 0.15) % 3,
   }))
 
+  const typeLabel = consultationType ? TYPE_LABELS[consultationType] ?? consultationType : null
+
+  // While redirecting (no consultationId), render nothing
+  if (!consultationId) return null
+
   return (
     <main className="min-h-screen bg-void flex flex-col">
-      {/* Atmospheric header */}
       <nav className="fixed top-0 left-0 right-0 z-50 bg-void/80 backdrop-blur-md border-b border-mystic/20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2 group">
@@ -114,13 +122,12 @@ function AssinarContent() {
               Tarot<span className="text-gold">Místico</span>
             </span>
           </Link>
-          <Link href="/login" className="text-sm text-muted hover:text-parchment transition-colors font-body">
-            Já tenho conta
+          <Link href="/dashboard" className="text-sm text-muted hover:text-parchment transition-colors font-body">
+            Voltar ao dashboard
           </Link>
         </div>
       </nav>
 
-      {/* Background particles */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none" aria-hidden="true">
         <div className="absolute inset-0 bg-gradient-to-b from-arcane/30 via-void to-void" />
         <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] rounded-full bg-mystic/10 blur-[120px]" />
@@ -136,17 +143,11 @@ function AssinarContent() {
               background: s.size > 2 ? '#D4AF37' : '#F0E6FF',
             }}
             animate={{ opacity: [0.1, 0.8, 0.1], scale: [0.6, 1.3, 0.6] }}
-            transition={{
-              duration: 2.5,
-              delay: s.delay,
-              repeat: Infinity,
-              ease: 'easeInOut',
-            }}
+            transition={{ duration: 2.5, delay: s.delay, repeat: Infinity, ease: 'easeInOut' }}
           />
         ))}
       </div>
 
-      {/* Main content */}
       <div className="flex-1 flex items-center justify-center px-4 pt-24 pb-16">
         <motion.div
           className="bg-abyss border border-arcane/60 rounded-2xl p-8 max-w-md w-full text-center shadow-2xl relative z-10"
@@ -154,7 +155,6 @@ function AssinarContent() {
           animate={{ opacity: 1, y: 0 }}
           transition={prefersReducedMotion ? {} : { duration: 0.6, ease: 'easeOut' }}
         >
-          {/* Logo / title */}
           <div className="flex items-center justify-center gap-2 mb-2">
             <Sparkles className="w-5 h-5 text-gold" />
             <h1 className="font-display text-3xl text-gold tracking-widest">
@@ -162,25 +162,40 @@ function AssinarContent() {
             </h1>
           </div>
           <p className="text-parchment font-body mb-1">
-            Assinatura mensal — <strong className="text-gold">R$5/mês</strong>
+            {typeLabel
+              ? <>Consulta de <strong className="text-gold">{typeLabel}</strong></>
+              : 'Consulta de Tarot'
+            }
           </p>
           <p className="text-muted text-xs font-body mb-6">
-            Acesso completo ao portal + carta diária gratuita
+            {consultationAmount !== null
+              ? `R$${consultationAmount} · pagamento único via PIX`
+              : 'Pagamento único via PIX'
+            }
           </p>
 
           <div className="w-full h-px bg-arcane/40 mb-6" />
 
           {state.step === 'idle' && (
-            <button
-              onClick={gerarPix}
-              className="w-full py-3 rounded-xl font-body font-semibold text-void bg-gradient-to-r from-gold to-amethyst hover:opacity-90 transition-opacity cursor-pointer"
-            >
-              Assinar por R$5 via PIX
-            </button>
+            <p className="text-parchment font-body animate-pulse text-sm">Carregando...</p>
           )}
 
           {state.step === 'loading' && (
             <p className="text-parchment font-body animate-pulse">Gerando QR Code...</p>
+          )}
+
+          {state.step === 'qr_missing' && (
+            <div className="flex flex-col gap-4">
+              <p className="text-muted font-body text-sm">
+                O QR Code expirou ou não foi encontrado.
+              </p>
+              <Link
+                href="/dashboard"
+                className="w-full py-3 rounded-xl font-body font-semibold text-void bg-gradient-to-r from-gold to-amethyst hover:opacity-90 transition-opacity text-center block"
+              >
+                Voltar ao dashboard
+              </Link>
+            </div>
           )}
 
           {state.step === 'qr' && (
@@ -207,12 +222,12 @@ function AssinarContent() {
           {state.step === 'expired' && (
             <div className="flex flex-col gap-4">
               <p className="text-red-400 font-body text-sm">QR Code expirado ou pagamento cancelado.</p>
-              <button
-                onClick={gerarPix}
-                className="w-full py-3 rounded-xl font-body font-semibold text-void bg-gradient-to-r from-gold to-amethyst hover:opacity-90 transition-opacity cursor-pointer"
+              <Link
+                href="/dashboard"
+                className="w-full py-3 rounded-xl font-body font-semibold text-void bg-gradient-to-r from-gold to-amethyst hover:opacity-90 transition-opacity text-center block"
               >
-                Gerar novo PIX
-              </button>
+                Voltar ao dashboard
+              </Link>
             </div>
           )}
 
@@ -224,13 +239,15 @@ function AssinarContent() {
 
           {state.step === 'error' && (
             <div className="flex flex-col gap-4">
-              <p className="text-red-400 font-body text-sm">{state.message}</p>
-              <button
-                onClick={() => setState({ step: 'idle' })}
+              <p className="text-red-400 font-body text-sm">
+                {'message' in state ? state.message : 'Erro desconhecido'}
+              </p>
+              <Link
+                href="/dashboard"
                 className="text-gold underline text-sm font-body cursor-pointer"
               >
-                Tentar novamente
-              </button>
+                Voltar ao dashboard
+              </Link>
             </div>
           )}
         </motion.div>

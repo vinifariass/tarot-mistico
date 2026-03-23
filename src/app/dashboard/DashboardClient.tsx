@@ -129,11 +129,14 @@ export function DashboardClient({ session }: { session: Session }) {
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error)
+      const consultationItem = CONSULTATIONS.find((c) => c.id === type)
       sessionStorage.setItem(`consultation_qr_${data.consultationId}`, JSON.stringify({
         paymentId: data.payment_id,
         qrCode: data.qr_code,
         qrCodeBase64: data.qr_code_base64,
         expiresAt: data.expires_at,
+        type,
+        amount: consultationItem?.price ?? 0,
       }))
       router.push(`/assinar?consultationId=${data.consultationId}`)
     } catch (e: unknown) {
