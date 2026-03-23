@@ -10,7 +10,6 @@ vi.mock('@/lib/prisma', () => ({
   default: {
     payment: { updateMany: vi.fn(), create: vi.fn(), update: vi.fn() },
     consultation: { create: vi.fn(), update: vi.fn() },
-    subscription: { findUnique: vi.fn() },
   },
 }))
 
@@ -44,25 +43,8 @@ describe('POST /api/consultation/start', () => {
     expect(res.status).toBe(401)
   })
 
-  it('returns 403 when subscription is inactive', async () => {
-    vi.mocked(getServerSession).mockResolvedValue(mockSession)
-    vi.mocked(prisma.subscription.findUnique).mockResolvedValue({
-      status: 'inactive',
-    } as any)
-    const req = new Request('http://localhost', {
-      method: 'POST',
-      body: JSON.stringify({ type: 'familia' }),
-    })
-    const res = await POST(req)
-    expect(res.status).toBe(403)
-  })
-
   it('returns 400 for invalid consultation type', async () => {
     vi.mocked(getServerSession).mockResolvedValue(mockSession)
-    vi.mocked(prisma.subscription.findUnique).mockResolvedValue({
-      status: 'active',
-      expiresAt: new Date(Date.now() + 1000000),
-    } as any)
     const req = new Request('http://localhost', {
       method: 'POST',
       body: JSON.stringify({ type: 'invalid' }),
@@ -73,10 +55,6 @@ describe('POST /api/consultation/start', () => {
 
   it('creates consultation and returns payment data on success', async () => {
     vi.mocked(getServerSession).mockResolvedValue(mockSession)
-    vi.mocked(prisma.subscription.findUnique).mockResolvedValue({
-      status: 'active',
-      expiresAt: new Date(Date.now() + 1000000),
-    } as any)
     vi.mocked(prisma.payment.updateMany).mockResolvedValue({ count: 0 } as any)
     vi.mocked(mpPayment.create).mockResolvedValue(mockMpResponse as any)
     vi.mocked(prisma.payment.create).mockResolvedValue({ id: 'pay-1' } as any)

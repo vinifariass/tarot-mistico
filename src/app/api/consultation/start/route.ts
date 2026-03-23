@@ -24,21 +24,6 @@ export async function POST(req: Request) {
 
   const userId = session.user.id
 
-  const subscription = await prisma.subscription.findUnique({
-    where: { userId },
-    select: { status: true, expiresAt: true },
-  })
-  if (
-    !subscription ||
-    subscription.status !== 'active' ||
-    (subscription.expiresAt && subscription.expiresAt < new Date())
-  ) {
-    return NextResponse.json(
-      { error: 'Assinatura inativa. Assine para continuar.' },
-      { status: 403 }
-    )
-  }
-
   const body = await req.json()
   const { type } = body as { type: string }
 
