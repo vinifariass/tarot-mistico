@@ -1,12 +1,10 @@
 // src/lib/mercadopago.ts
 import MercadoPagoConfig, { Payment } from 'mercadopago'
 
-if (!process.env.MERCADOPAGO_ACCESS_TOKEN) {
-  throw new Error('MERCADOPAGO_ACCESS_TOKEN is not set')
-}
+const token = process.env.MERCADOPAGO_ACCESS_TOKEN ?? ''
 
 const client = new MercadoPagoConfig({
-  accessToken: process.env.MERCADOPAGO_ACCESS_TOKEN,
+  accessToken: token,
 })
 
 export const mpPayment = new Payment(client)
