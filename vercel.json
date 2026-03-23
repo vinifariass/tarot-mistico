@@ -1,13 +1,4 @@
 {
   "buildCommand": "npx prisma generate && next build",
-  "framework": "nextjs",
-  "env": {
-    "DATABASE_URL": "@database_url",
-    "NEXTAUTH_SECRET": "@nextauth_secret",
-    "NEXTAUTH_URL": "@nextauth_url",
-    "MERCADOPAGO_ACCESS_TOKEN": "@mercadopago_access_token",
-    "MERCADOPAGO_WEBHOOK_SECRET": "@mercadopago_webhook_secret",
-    "ANTHROPIC_API_KEY": "@anthropic_api_key",
-    "NEXT_PUBLIC_BASE_URL": "@next_public_base_url"
-  }
+  "framework": "nextjs"
 }

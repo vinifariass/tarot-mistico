@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "defaultMode": "bypassPermissions",
+    "allow": [
+      "Bash(npx tsc:*)",
+      "Bash(git:*)",
+      "Bash(mkdir:*)",
+      "Bash(python:*)",
+      "Bash(node -e \"const data = require\\(''./src/data/tarot-cards.json''\\); console.log\\(''Total cards:'', data.length\\); console.log\\(''Sample entry keys:'', Object.keys\\(data[0]\\)\\); console.log\\(''First entry:'', JSON.stringify\\(data[0], null, 2\\)\\); console.log\\(''\\\\nLast entry:'', JSON.stringify\\(data[data.length-1], null, 2\\)\\); const major = data.filter\\(c => c.arcana === ''major''\\).length; const minor = data.filter\\(c => c.arcana === ''minor''\\).length; console.log\\(''\\\\nMajor:'', major, ''Minor:'', minor\\);\")",
+      "Bash(check-ts.js:*)",
+      "Bash(node check-ts.js)",
+      "Bash(npm test:*)",
+      "Bash(npx vitest:*)",
+      "Skill(update-config)",
+      "Write"
+    ]
+  }
+}

@@ -41,3 +41,5 @@ next-env.d.ts
 
 # prisma
 # migrations tracked in git
+
+.vercel
